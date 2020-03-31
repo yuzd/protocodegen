@@ -218,10 +218,12 @@ class ProtoCodeGen : AnAction() {
         )
         val printWriter = PrintWriter(streamWriter)
         printWriter.println("#!/bin/bash")
+        // folder 是plugin 所在的文件夹
         printWriter.println("chmod -R 777 \"$folder\"")
         printWriter.println("cd \"$folder\"")
+        
         files.forEach {
-            printWriter.println("./$fileName -I protobuf --java_out=$outPut \"${it.absolutePath}\"")
+            printWriter.println("./$fileName -I protobuf --java_out=\"$outPut\" \"${it.absolutePath}\" --proto_path=\"$folderPath\"")
         }
         printWriter.close()
         return tempScript
