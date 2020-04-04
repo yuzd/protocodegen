@@ -60,9 +60,16 @@ class ProtoCodeGen : AnAction() {
         val basePath = FileSystems.getDefault().getPath(folderPath)
         val resolvedPath = basePath.parent.resolve(outPut)
         outPut = resolvedPath.normalize().toString()
-
+        if(!Files.exists(Paths.get(outPut))){
+            Messages.showMessageDialog(
+                    "$outPut not exist",
+                    "Error",
+                    Messages.getErrorIcon()
+            );
+            return;
+        }
+        
         val protoFiles = File(folderPath).listFiles()?.filter { it.extension == "proto" }
-
         if (protoFiles == null || !protoFiles.any()) {
             Messages.showMessageDialog(
                 "can not find any proto file in $folderPath",
@@ -174,13 +181,13 @@ class ProtoCodeGen : AnAction() {
             val tempScriptLog: File = File.createTempFile("genscript", ".txt")
             val bashFile = if (osType == OsCheck.OSType.MacOS) createTempScript(
                 folderPath,
-                pluginPath,
-                exePath.toString(),
+                pluginPath, 
+                execFile,
                 protoFiles,
                 outPut
             ) else createWindowsTempScript(folderPath,pluginPath, exePath.toString(), protoFiles, outPut)
             try {
-                msg = JavaExeBat.Excute(if (osType == OsCheck.OSType.MacOS) "bash" else "cmd.exe",bashFile.toString(),tempScriptLog.absolutePath)
+                msg = JavaExeBat.Excute(osType,bashFile.toString(),tempScriptLog.absolutePath)
                 if (msg.isNotEmpty()) {
                     result = 1;
                 }
@@ -210,7 +217,7 @@ class ProtoCodeGen : AnAction() {
 
     @Throws(IOException::class)
     fun createTempScript(folderPath:String,folder: String, fileName: String, files: List<File>, outPut: String): File? {
-        val tempScript: File = File.createTempFile("genscript", null)
+        val tempScript: File = File.createTempFile("genscript", ".sh")
         val streamWriter: Writer = OutputStreamWriter(
             FileOutputStream(
                 tempScript
@@ -218,6 +225,7 @@ class ProtoCodeGen : AnAction() {
         )
         val printWriter = PrintWriter(streamWriter)
         printWriter.println("#!/bin/bash")
+        printWriter.println("set -e")
         // folder 是plugin 所在的文件夹
         printWriter.println("chmod -R 777 \"$folder\"")
         printWriter.println("cd \"$folder\"")
