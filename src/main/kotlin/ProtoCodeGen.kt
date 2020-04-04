@@ -57,6 +57,8 @@ class ProtoCodeGen : AnAction() {
             return;
         }
         
+        var lang = config.getProperty("lang","java")
+        
         val basePath = FileSystems.getDefault().getPath(folderPath)
         val resolvedPath = basePath.parent.resolve(outPut)
         outPut = resolvedPath.normalize().toString()
@@ -143,7 +145,7 @@ class ProtoCodeGen : AnAction() {
 
         thread {
             ISRUN = true;
-            val resultRT = doAction(folderPath,pluginPath, exePath, execFile, outPut, protoFiles, ostype)
+            val resultRT = doAction(folderPath,pluginPath, exePath, execFile, outPut, protoFiles, ostype,lang)
             ISRUN = false;
             val result = resultRT.second
             ApplicationManager.getApplication().invokeLater {
@@ -173,7 +175,8 @@ class ProtoCodeGen : AnAction() {
         execFile: String,
         outPut: String,
         protoFiles: List<File>,
-        osType: OsCheck.OSType
+        osType: OsCheck.OSType,
+        lang:String
     ): Pair<String, Int> {
         var result = 0;
         var msg = "";
@@ -184,8 +187,8 @@ class ProtoCodeGen : AnAction() {
                 pluginPath, 
                 execFile,
                 protoFiles,
-                outPut
-            ) else createWindowsTempScript(folderPath,pluginPath, exePath.toString(), protoFiles, outPut)
+                outPut,lang
+            ) else createWindowsTempScript(folderPath,pluginPath, exePath.toString(), protoFiles, outPut,lang)
             try {
                 msg = JavaExeBat.Excute(osType,bashFile.toString(),tempScriptLog.absolutePath)
                 if (msg.isNotEmpty()) {
@@ -216,7 +219,7 @@ class ProtoCodeGen : AnAction() {
     }
 
     @Throws(IOException::class)
-    fun createTempScript(folderPath:String,folder: String, fileName: String, files: List<File>, outPut: String): File? {
+    fun createTempScript(folderPath:String,folder: String, fileName: String, files: List<File>, outPut: String,lang:String): File? {
         val tempScript: File = File.createTempFile("genscript", ".sh")
         val streamWriter: Writer = OutputStreamWriter(
             FileOutputStream(
@@ -231,14 +234,14 @@ class ProtoCodeGen : AnAction() {
         printWriter.println("cd \"$folder\"")
         
         files.forEach {
-            printWriter.println("./$fileName -I protobuf --java_out=\"$outPut\" \"${it.absolutePath}\" --proto_path=\"$folderPath\"")
+            printWriter.println("./$fileName -I protobuf --${lang}_out=\"$outPut\" \"${it.absolutePath}\" --proto_path=\"$folderPath\"")
         }
         printWriter.close()
         return tempScript
     }
 
     @Throws(IOException::class)
-    fun createWindowsTempScript(folderPath:String,folder: String, fileName: String, files: List<File>, outPut: String): File? {
+    fun createWindowsTempScript(folderPath:String,folder: String, fileName: String, files: List<File>, outPut: String,lang:String): File? {
         val tempScript: File = File.createTempFile("genscript", ".bat")
         val streamWriter: Writer = OutputStreamWriter(
             FileOutputStream(
@@ -251,12 +254,12 @@ class ProtoCodeGen : AnAction() {
         files.forEach {
             //fileName 是 protoc的完整路径
             // outPut是填写的相对路径
-            printWriter.println("\"$fileName\" -I protobuf --java_out=\"$outPut\" ${it.name} --proto_path=\"$folderPath\"")
+            printWriter.println("\"$fileName\" -I protobuf --${lang}_out=\"$outPut\" ${it.name} --proto_path=\"$folderPath\"")
         }
         printWriter.close()
         return tempScript
     }
-
+    
     override fun update(e: AnActionEvent) {
         val virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE)
         e.presentation.isVisible =
