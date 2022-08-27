@@ -8,8 +8,15 @@ import java.util.List;
 import java.util.Scanner;
 
 public class JavaExeBat {
-    
-    
+
+
+    /**
+     * use bat to call proto.exe
+     * @param osType
+     * @param batPath
+     * @param logFile
+     * @return
+     */
     public static String Excute(OsCheck.OSType osType, String batPath, String logFile) {
         StringBuilder strBuilder = new StringBuilder();
         try {

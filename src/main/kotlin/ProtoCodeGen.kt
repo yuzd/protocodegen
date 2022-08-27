@@ -56,21 +56,21 @@ class ProtoCodeGen : AnAction() {
             );
             return;
         }
-        
-        var lang = config.getProperty("lang","java")
-        
+
+        var lang = config.getProperty("lang", "java")
+
         val basePath = FileSystems.getDefault().getPath(folderPath)
         val resolvedPath = basePath.parent.resolve(outPut)
         outPut = resolvedPath.normalize().toString()
-        if(!Files.exists(Paths.get(outPut))){
+        if (!Files.exists(Paths.get(outPut))) {
             Messages.showMessageDialog(
-                    "$outPut not exist",
-                    "Error",
-                    Messages.getErrorIcon()
+                "$outPut not exist",
+                "Error",
+                Messages.getErrorIcon()
             );
             return;
         }
-        
+
         val protoFiles = File(folderPath).listFiles()?.filter { it.extension == "proto" }
         if (protoFiles == null || !protoFiles.any()) {
             Messages.showMessageDialog(
@@ -145,7 +145,7 @@ class ProtoCodeGen : AnAction() {
 
         thread {
             ISRUN = true;
-            val resultRT = doAction(folderPath,pluginPath, exePath, execFile, outPut, protoFiles, ostype,lang)
+            val resultRT = doAction(folderPath, pluginPath, exePath, execFile, outPut, protoFiles, ostype, lang)
             ISRUN = false;
             val result = resultRT.second
             ApplicationManager.getApplication().invokeLater {
@@ -157,6 +157,7 @@ class ProtoCodeGen : AnAction() {
                         )
                         notice.notify(project)
                     }
+
                     else -> {
                         val notice =
                             NOTIFICATION_GROUP.createNotification("proto codegen success", NotificationType.INFORMATION)
@@ -169,14 +170,14 @@ class ProtoCodeGen : AnAction() {
     }
 
     private fun doAction(
-        folderPath:String,
+        folderPath: String,
         pluginPath: String,
         exePath: Path,
         execFile: String,
         outPut: String,
         protoFiles: List<File>,
         osType: OsCheck.OSType,
-        lang:String
+        lang: String
     ): Pair<String, Int> {
         var result = 0;
         var msg = "";
@@ -184,13 +185,13 @@ class ProtoCodeGen : AnAction() {
             val tempScriptLog: File = File.createTempFile("genscript", ".txt")
             val bashFile = if (osType == OsCheck.OSType.MacOS) createTempScript(
                 folderPath,
-                pluginPath, 
+                pluginPath,
                 execFile,
                 protoFiles,
-                outPut,lang
-            ) else createWindowsTempScript(folderPath,pluginPath, exePath.toString(), protoFiles, outPut,lang)
+                outPut, lang
+            ) else createWindowsTempScript(folderPath, pluginPath, exePath.toString(), protoFiles, outPut, lang)
             try {
-                msg = JavaExeBat.Excute(osType,bashFile.toString(),tempScriptLog.absolutePath)
+                msg = JavaExeBat.Excute(osType, bashFile.toString(), tempScriptLog.absolutePath)
                 if (msg.isNotEmpty()) {
                     result = 1;
                 }
@@ -219,7 +220,14 @@ class ProtoCodeGen : AnAction() {
     }
 
     @Throws(IOException::class)
-    fun createTempScript(folderPath:String,folder: String, fileName: String, files: List<File>, outPut: String,lang:String): File? {
+    fun createTempScript(
+        folderPath: String,
+        folder: String,
+        fileName: String,
+        files: List<File>,
+        outPut: String,
+        lang: String
+    ): File? {
         val tempScript: File = File.createTempFile("genscript", ".sh")
         val streamWriter: Writer = OutputStreamWriter(
             FileOutputStream(
@@ -232,7 +240,7 @@ class ProtoCodeGen : AnAction() {
         // folder 是plugin 所在的文件夹
         printWriter.println("chmod -R 777 \"$folder\"")
         printWriter.println("cd \"$folder\"")
-        
+
         files.forEach {
             printWriter.println("./$fileName -I protobuf --${lang}_out=\"$outPut\" \"${it.absolutePath}\" --proto_path=\"$folderPath\"")
         }
@@ -241,7 +249,14 @@ class ProtoCodeGen : AnAction() {
     }
 
     @Throws(IOException::class)
-    fun createWindowsTempScript(folderPath:String,folder: String, fileName: String, files: List<File>, outPut: String,lang:String): File? {
+    fun createWindowsTempScript(
+        folderPath: String,
+        folder: String,
+        fileName: String,
+        files: List<File>,
+        outPut: String,
+        lang: String
+    ): File? {
         val tempScript: File = File.createTempFile("genscript", ".bat")
         val streamWriter: Writer = OutputStreamWriter(
             FileOutputStream(
@@ -259,7 +274,7 @@ class ProtoCodeGen : AnAction() {
         printWriter.close()
         return tempScript
     }
-    
+
     override fun update(e: AnActionEvent) {
         val virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE)
         e.presentation.isVisible =
